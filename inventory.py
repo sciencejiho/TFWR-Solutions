@@ -13,9 +13,9 @@ TARGET = {
 
 # endregion
 
-
+# -------------------------------------------------------------------------------
 # region Queries
-
+# -------------------------------------------------------------------------------
 def target_ratio(item):
 	# Return current inventory relative to target.
 	return num_items(item) / TARGET[item]

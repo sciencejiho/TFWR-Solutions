@@ -1,9 +1,10 @@
 import planter
 import giant_pumpkin
-
+from __builtins__ import *
 
 def farm_tile():
 	# Harvest and replant the current tile.
+
 	if can_harvest():
 		harvest()
 
