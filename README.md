@@ -18,28 +18,44 @@ written for the game's Python-like programming environment.
 > This repository contains progression and puzzle spoilers. Discovering your
 > own solutions is a large part of the game, so browse accordingly.
 
-## Repository progression
-
-[![Movement: ready](https://img.shields.io/badge/Movement-ready-2ea44f?style=for-the-badge)](movement.py)
-[![Inventory: ready](https://img.shields.io/badge/Inventory-ready-2ea44f?style=for-the-badge)](inventory.py)
-[![Carrots: ready](https://img.shields.io/badge/Carrots-ready-2ea44f?style=for-the-badge)](strategy_carrot.py)
-[![Pumpkins: active](https://img.shields.io/badge/Pumpkins-active-0969da?style=for-the-badge)](strategy_pumpkin.py)
-[![Crop care: ready](https://img.shields.io/badge/Crop%20care-ready-2ea44f?style=for-the-badge)](crop_care.py)
-[![Polyculture: experimental](https://img.shields.io/badge/Polyculture-experimental-d97706?style=for-the-badge)](strategy_polyculture.py)
-
-## In-game progression
-
-![Grass level 6](https://img.shields.io/badge/Grass-Lv%206-5f8f3d?style=flat-square)
-![Speed level 5](https://img.shields.io/badge/Speed-Lv%205-0969da?style=flat-square)
-![Farm size level 7](https://img.shields.io/badge/Farm%20size-Lv%207-8250df?style=flat-square)
-![Carrots level 5](https://img.shields.io/badge/Carrots-Lv%205-d97706?style=flat-square)
-![Trees level 6](https://img.shields.io/badge/Trees-Lv%206-1a7f37?style=flat-square)
-![Watering level 5](https://img.shields.io/badge/Watering-Lv%205-218bff?style=flat-square)
-![Pumpkins level 5](https://img.shields.io/badge/Pumpkins-Lv%205-b35900?style=flat-square)
-![Fertilizer level 4](https://img.shields.io/badge/Fertilizer-Lv%204-8250df?style=flat-square)
-![Cactus level 2](https://img.shields.io/badge/Cactus-Lv%202-5f8f3d?style=flat-square)
-![Polyculture unlocked](https://img.shields.io/badge/Polyculture-unlocked-1a7f37?style=flat-square)
-![Sunflowers unlocked](https://img.shields.io/badge/Sunflowers-unlocked-b08800?style=flat-square)
+<table align="center">
+  <thead>
+    <tr>
+      <th align="left">Repository progression</th>
+      <th align="left">In-game progression</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td valign="top">
+  <a href="movement.py"><img src="https://img.shields.io/badge/Movement-ready-2ea44f?style=flat" alt="Movement: ready" height="24"></a><br>
+  <a href="inventory.py"><img src="https://img.shields.io/badge/Inventory-ready-2ea44f?style=flat" alt="Inventory: ready" height="24"></a><br>
+  <a href="strategy_carrot.py"><img src="https://img.shields.io/badge/Carrots-ready-2ea44f?style=flat" alt="Carrots: ready" height="24"></a><br>
+  <a href="strategy_pumpkin.py"><img src="https://img.shields.io/badge/Pumpkins-active-0969da?style=flat" alt="Pumpkins: active" height="24"></a><br>
+  <a href="crop_care.py"><img src="https://img.shields.io/badge/Crop%20care-ready-2ea44f?style=flat" alt="Crop care: ready" height="24"></a><br>
+  <a href="strategy_polyculture.py"><img src="https://img.shields.io/badge/Polyculture-experimental-d97706?style=flat" alt="Polyculture: experimental" height="24"></a>
+      </td>
+      <td valign="top">
+  <img src="https://img.shields.io/badge/Grass-Lv%206-0969da?style=flat" alt="Grass level 6" height="24"><br>
+  <img src="https://img.shields.io/badge/Speed-Lv%205-0969da?style=flat" alt="Speed level 5" height="24"><br>
+  <img src="https://img.shields.io/badge/Farm%20size-Lv%207-0969da?style=flat" alt="Farm size level 7" height="24"><br>
+  <img src="https://img.shields.io/badge/Carrots-Lv%205-0969da?style=flat" alt="Carrots level 5" height="24"><br>
+  <img src="https://img.shields.io/badge/Trees-Lv%206-0969da?style=flat" alt="Trees level 6" height="24"><br>
+  <img src="https://img.shields.io/badge/Watering-Lv%205-0969da?style=flat" alt="Watering level 5" height="24"><br>
+  <img src="https://img.shields.io/badge/Pumpkins-Lv%205-0969da?style=flat" alt="Pumpkins level 5" height="24"><br>
+  <img src="https://img.shields.io/badge/Fertilizer-Lv%204-0969da?style=flat" alt="Fertilizer level 4" height="24"><br>
+  <img src="https://img.shields.io/badge/Cactus-Lv%202-0969da?style=flat" alt="Cactus level 2" height="24"><br>
+  <img src="https://img.shields.io/badge/Polyculture-unlocked-2ea44f?style=flat" alt="Polyculture unlocked" height="24"><br>
+  <img src="https://img.shields.io/badge/Sunflowers-unlocked-2ea44f?style=flat" alt="Sunflowers unlocked" height="24"><br>
+  <img src="https://img.shields.io/badge/Mazes-locked-6e7781?style=flat" alt="Mazes locked" height="24"><br>
+  <img src="https://img.shields.io/badge/Dinosaurs-locked-6e7781?style=flat" alt="Dinosaurs locked" height="24"><br>
+  <img src="https://img.shields.io/badge/Megafarm-locked-6e7781?style=flat" alt="Megafarm locked" height="24"><br>
+  <img src="https://img.shields.io/badge/Simulation-locked-6e7781?style=flat" alt="Simulation locked" height="24"><br>
+  <img src="https://img.shields.io/badge/Leaderboards-locked-6e7781?style=flat" alt="Leaderboards locked" height="24">
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 The in-game badges reflect the unlock data in the current save. Repository
 badges describe automation maturity instead, so an unlocked crop may still
