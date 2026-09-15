@@ -5,6 +5,7 @@
 from __builtins__ import *
 
 import crop_care
+import drone_control
 import inventory
 import movement
 import polyculture_field
@@ -18,6 +19,10 @@ CROP_BY_ITEM = {
 	Items.Carrot: Entities.Carrot,
 	Items.Power: Entities.Sunflower,
 }
+
+CROP_MISSING = 0
+CROP_KEPT = 1
+CROP_HARVESTED = 2
 
 
 def _select_primary():
@@ -73,24 +78,43 @@ def _crop_limit(size):
 
 def _process_crops(field, limit):
 	coordinates = polyculture_field.begin_crop_pass(field)
+	jobs = []
 
 	for x, y in coordinates:
-		movement.move_to(x, y)
 		expected = polyculture_field.get_crop(field, x, y)
+		waiting = polyculture_field.has_request(field, x, y)
+		jobs.append((x, y, expected, waiting))
 
-		if get_entity_type() != expected:
+	results = drone_control.run_jobs(_process_crop, jobs)
+
+	for x, y, expected, result in results:
+		if result == CROP_MISSING:
 			polyculture_field.set_crop(field, x, y, None)
-		elif (
-			polyculture_field.has_request(field, x, y)
-			or not can_harvest()
-			and not crop_care.care_until_mature()
-		):
-			polyculture_field.set_crop(field, x, y, expected)
-		elif can_harvest() and harvest():
+		elif result == CROP_HARVESTED:
 			polyculture_field.set_crop(field, x, y, None)
+			movement.move_to(x, y)
 			_plant_if_below_limit(field, limit)
 		else:
 			polyculture_field.set_crop(field, x, y, expected)
+
+
+def _process_crop(job):
+	x, y, expected, waiting = job
+	movement.move_to(x, y)
+
+	if get_entity_type() != expected:
+		return x, y, expected, CROP_MISSING
+
+	if waiting:
+		return x, y, expected, CROP_KEPT
+
+	if not can_harvest() and not crop_care.care_until_mature():
+		return x, y, expected, CROP_KEPT
+
+	if can_harvest() and harvest():
+		return x, y, expected, CROP_HARVESTED
+
+	return x, y, expected, CROP_KEPT
 
 
 def _process_requests(field, limit):

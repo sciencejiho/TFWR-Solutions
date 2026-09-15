@@ -4,18 +4,30 @@
 
 from __builtins__ import *
 
-# region Targets
+# region Farm targets
 
-TARGET = {
-	Items.Hay: 500000,
-	Items.Wood: 500000,
-	Items.Carrot: 100000,
-	Items.Pumpkin: 100000,
+FARM_TARGET = {
+	Items.Hay: 2000000,
+	Items.Wood: 2000000,
+	Items.Carrot: 1000000,
+	Items.Pumpkin: 1000000,
 	Items.Weird_Substance: 10000,
+	Items.Power: 500,
+	Items.Cactus: 1000,
+	Items.Gold: 100000,
+}
+
+# endregion
+
+
+# region Passive targets
+
+PASSIVE_TARGET = {
 	Items.Water: 5000,
 	Items.Fertilizer: 500,
-	Items.Power: 500,
 }
+
+REFILL_RATIO = 0.8
 
 # endregion
 
@@ -23,14 +35,27 @@ TARGET = {
 # ------------------------------------------------------------------------------
 # region Queries
 # ------------------------------------------------------------------------------
+def target_amount(item):
+	# Return the configured farm target or passive reserve.
+	if item in FARM_TARGET:
+		return FARM_TARGET[item]
+
+	return PASSIVE_TARGET[item]
+
+
 def target_ratio(item):
 	# Return current inventory relative to target.
-	return num_items(item) / TARGET[item]
+	return num_items(item) / target_amount(item)
 
 
 def below_target(item):
 	# Return whether inventory is below target.
-	return num_items(item) < TARGET[item]
+	return num_items(item) < target_amount(item)
+
+
+def needs_refill(item):
+	# Return whether a farmed item is low enough to preempt a maze.
+	return target_ratio(item) < REFILL_RATIO
 
 
 # endregion

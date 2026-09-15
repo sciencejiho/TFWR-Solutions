@@ -1,18 +1,18 @@
 # ------------------------------------------------------------------------------
-# pumpkin_field.py
+# cactus_field.py
 # ------------------------------------------------------------------------------
 
 from __builtins__ import *
 
+import cactus_tile
 import drone_control
 import movement
-import pumpkin_tile
 
 # region Field scanning
 
 
 def scan_world():
-	# Scan every tile and return its readiness state and pending coordinates.
+	# Scan every tile and return readiness state and pending coordinates.
 	size = get_world_size()
 	state = _new_state(size)
 	pending = []
@@ -34,7 +34,7 @@ def _scan_column(x):
 	movement.move_to(x, 0)
 
 	for y in range(get_world_size()):
-		ready = pumpkin_tile.resolve_current()
+		ready = cactus_tile.resolve_current()
 		column.append(ready)
 
 		if not ready:
@@ -68,7 +68,7 @@ def _revisit_coordinates(coordinates):
 	for x, y in coordinates:
 		movement.move_to(x, y)
 
-		if pumpkin_tile.resolve_current():
+		if cactus_tile.resolve_current():
 			resolved.append((x, y))
 		else:
 			unresolved.append((x, y))
@@ -92,6 +92,81 @@ def _group_by_column(coordinates):
 			jobs.append(column)
 
 	return jobs
+
+
+# endregion
+
+
+# region Sorting
+
+
+def sort_world():
+	# Sort rows eastward, then columns northward.
+	size = get_world_size()
+
+	if not _all_succeeded(
+		drone_control.run_jobs(_sort_row, range(size))
+	):
+		return False
+
+	return _all_succeeded(
+		drone_control.run_jobs(_sort_column, range(size))
+	)
+
+
+def _sort_row(y):
+	return _sort_line(0, y, East, get_world_size())
+
+
+def _sort_column(x):
+	return _sort_line(x, 0, North, get_world_size())
+
+
+def _all_succeeded(results):
+	for result in results:
+		if not result:
+			return False
+
+	return True
+
+
+def _sort_line(start_x, start_y, direction, size):
+	for pass_index in range(size - 1):
+		is_sorted = True
+		movement.move_to(start_x, start_y)
+
+		for _ in range(size - pass_index - 1):
+			swapped = _swap_if_needed(direction)
+
+			if swapped == None:
+				return False
+
+			if swapped:
+				is_sorted = False
+
+			if not move(direction):
+				return False
+
+		if is_sorted:
+			return True
+
+	return True
+
+
+def _swap_if_needed(direction):
+	current_size = measure()
+	next_size = measure(direction)
+
+	if current_size == None or next_size == None:
+		return None
+
+	if current_size <= next_size:
+		return False
+
+	if not swap(direction):
+		return None
+
+	return True
 
 
 # endregion

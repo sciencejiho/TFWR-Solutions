@@ -55,8 +55,8 @@ def plant_carrot():
 	hay = num_items(Items.Hay)
 	wood = num_items(Items.Wood)
 
-	hay_target = inventory.TARGET[Items.Hay]
-	wood_target = inventory.TARGET[Items.Wood]
+	hay_target = inventory.target_amount(Items.Hay)
+	wood_target = inventory.target_amount(Items.Wood)
 
 	if hay > hay_target and wood > wood_target:
 		_set_soil()

@@ -14,7 +14,7 @@ def water_if_needed():
 	if get_water() >= 0.1:
 		return False
 
-	if num_items(Items.Water) <= inventory.TARGET[Items.Water]:
+	if not _has_drone_margin(Items.Water):
 		return False
 
 	return use_item(Items.Water)
@@ -34,7 +34,7 @@ def fertilize_until_mature():
 		return True
 
 	for _ in range(MAX_FERTILIZER_USES):
-		if num_items(Items.Fertilizer) <= inventory.TARGET[Items.Fertilizer]:
+		if not _has_drone_margin(Items.Fertilizer):
 			return False
 
 		if not use_item(Items.Fertilizer):
@@ -63,6 +63,17 @@ def care_until_mature():
 		return True
 
 	return fertilize_until_mature()
+
+
+# endregion
+
+
+# region Spending
+
+
+def _has_drone_margin(item):
+	reserve = inventory.target_amount(item)
+	return num_items(item) >= reserve + max_drones()
 
 
 # endregion

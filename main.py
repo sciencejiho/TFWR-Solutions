@@ -4,13 +4,12 @@
 
 from __builtins__ import *
 
-import strategy_pumpkin
+import strategy_control
 
-change_hat(Hats.Tree_Hat)
-pet_the_piggy()
+MAX_STRATEGY_STEPS = 1000000000
 
-state = strategy_pumpkin.new_state()
+state = strategy_control.new_state()
 
-# quality: ignore[POT02] - top-level scheduler runs until manually stopped
-while True:
-	strategy_pumpkin.grow_world(state)
+for _ in range(MAX_STRATEGY_STEPS):
+	if not strategy_control.step(state):
+		break
