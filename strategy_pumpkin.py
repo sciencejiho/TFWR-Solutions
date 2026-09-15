@@ -6,23 +6,36 @@ from __builtins__ import *
 
 import inventory
 import pumpkin_field
-import strategy_carrot
+import strategy_polyculture
 
 # region Farming strategy
 
 
-def grow_world():
+def new_state():
+	# Create state owned by the selected farming strategy.
+	return {"polyculture": strategy_polyculture.new_state()}
+
+
+def grow_world(state):
 	# Grow and harvest one world-sized giant pumpkin.
 	if inventory.target_ratio(Items.Carrot) < 1:
-		strategy_carrot.grow_world()
+		strategy_polyculture.grow_world(state["polyculture"])
 		return
 
-	state, pending = pumpkin_field.scan_world()
+	pumpkin_state, pending = pumpkin_field.scan_world()
 
-	while pending:
-		pending = pumpkin_field.revisit_pending(state, pending)
+	if len(pending) == 0:
+		harvest()
+		return
 
-	harvest()
+	max_revisits = get_world_size() * get_world_size()
+
+	for _ in range(max_revisits):
+		pending = pumpkin_field.revisit_pending(pumpkin_state, pending)
+
+		if len(pending) == 0:
+			harvest()
+			return
 
 
 # endregion

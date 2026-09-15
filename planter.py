@@ -9,6 +9,26 @@ import inventory
 # region Planting
 
 
+def plant_entity(entity):
+	# Plant an exact polyculture entity without applying strategy policy.
+	if entity == Entities.Grass:
+		_set_grassland()
+		return True
+
+	if entity == Entities.Bush or entity == Entities.Tree:
+		return plant(entity)
+
+	if entity == Entities.Cactus or entity == Entities.Carrot:
+		_set_soil()
+		return plant(entity)
+
+	if entity == Entities.Pumpkin or entity == Entities.Sunflower:
+		_set_soil()
+		return plant(entity)
+
+	return False
+
+
 def plant_grass():
 	# Prepare the tile for grass.
 	_set_grassland()
