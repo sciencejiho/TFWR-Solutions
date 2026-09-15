@@ -44,6 +44,8 @@ def grow_gold(state):
 		return _harvest_and_reset(state)
 
 	if maze.reuse_treasure():
+		# Reuse can open walls, so refresh before routing again.
+		solver["mapped"] = False
 		return True
 
 	return _harvest_and_reset(state)
