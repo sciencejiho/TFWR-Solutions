@@ -1,5 +1,3 @@
-# giant_pumpkin.py
-
 import movement
 import planter
 

@@ -1,6 +1,8 @@
 import planter
 import giant_pumpkin
+
 from __builtins__ import *
+
 
 def farm_tile():
 	# Harvest and replant the current tile.
@@ -8,17 +10,15 @@ def farm_tile():
 	if can_harvest():
 		harvest()
 
-	# planter.plant_carrot(
-		# NUM_HAY_STASH,
-		# NUM_WOOD_STASH
-	# )
+	planter.plant_carrot()
 	
-	planter.plant_pumpkin()
+	# planter.plant_pumpkin()
 
 	if (
 		get_water() < 0.1 
 		and num_items(Items.Water) > 0
 	):
+		use_item(Items.Water)
 		use_item(Items.Water)
 
 
@@ -38,4 +38,5 @@ change_hat(Hats.Tree_Hat)
 pet_the_piggy()
 
 while True:
-	giant_pumpkin.grow_world()
+	# giant_pumpkin.grow_world()
+	farm_world()
