@@ -25,6 +25,7 @@ def grow_world(state):
 		strategy_pumpkin.grow_world(state["pumpkin"])
 		return True
 
+	strategy_pumpkin.finish(state["pumpkin"])
 	cactus_state, pending = cactus_field.scan_world()
 	max_revisits = get_world_size() * get_world_size()
 
@@ -41,6 +42,11 @@ def grow_world(state):
 		return False
 
 	return harvest()
+
+
+def finish(state):
+	# Drain any nested pumpkin or polyculture supply drones.
+	return strategy_pumpkin.finish(state["pumpkin"])
 
 
 # endregion

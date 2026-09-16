@@ -14,7 +14,13 @@ import planter
 def grow_world():
 	# Process every column across the available drones.
 	size = get_world_size()
-	drone_control.run_jobs(_farm_column, range(size))
+	jobs = range(size)
+	starts = []
+
+	for x in jobs:
+		starts.append((x, 0))
+
+	drone_control.run_jobs(_farm_column, jobs, starts)
 
 
 def _farm_column(x):

@@ -7,35 +7,68 @@ from __builtins__ import *
 import crop_care
 import movement
 import planter
-import polyculture_field
 
 # region Planting
 
 
-def plant_current(field, entity):
-	# Plant one exact crop and record its companion preference.
-	if not planter.plant_entity(entity):
-		return False
+def maintain_at(job):
+	# Complete one crop visit before the lane moves to the next tile.
+	x, y, expected, waiting, primary = job
+	movement.move_to(x, y)
+	current = get_entity_type()
 
-	x = get_pos_x()
-	y = get_pos_y()
-	polyculture_field.set_crop(field, x, y, entity)
-	companion = get_companion()
+	if expected != None and current == expected:
+		if waiting:
+			return x, y, expected, None
 
-	if companion == None:
-		return True
+		if not can_harvest() and not crop_care.care_until_mature():
+			return x, y, expected, None
 
-	companion_entity, target = companion
-	target_x, target_y = target
-	polyculture_field.add_request(
-		field,
-		x,
-		y,
-		target_x,
-		target_y,
-		companion_entity,
-	)
-	return True
+		if not harvest():
+			return x, y, expected, None
+
+	result = plant_at((x, y, primary))
+
+	if result == None:
+		return x, y, None, None
+
+	return result
+
+
+def plant_at(job):
+	# Plant one coordinate and return the observation for controller state.
+	x, y, entity = job
+	movement.move_to(x, y)
+	current = get_entity_type()
+
+	if current != None and current != Entities.Dead_Pumpkin:
+		if not can_harvest() and not crop_care.care_until_mature():
+			return None
+
+		if not harvest():
+			return None
+
+	planted = _plant_with_fallback(entity)
+
+	if planted == None:
+		return None
+
+	planted_entity, companion = planted
+	crop_care.water_if_needed()
+	return x, y, planted_entity, companion
+
+
+def _plant_with_fallback(entity):
+	if planter.plant_entity(entity):
+		return entity, get_companion()
+
+	if entity == Entities.Grass:
+		return None
+
+	if not planter.plant_entity(Entities.Grass):
+		return None
+
+	return Entities.Grass, get_companion()
 
 
 # endregion
@@ -43,77 +76,72 @@ def plant_current(field, entity):
 
 # region Companion resolution
 
+REQUEST_SOURCE_MISSING = 0
+REQUEST_WAITING = 1
+REQUEST_BLOCKED = 2
+REQUEST_COMPLETED = 3
 
-def resolve_request(field, target_x, target_y):
-	# Resolve the oldest companion request for one target coordinate.
-	request = polyculture_field.peek_request(field, target_x, target_y)
 
-	if request == None:
-		return
-
-	source_x, source_y = request["source"]
+def resolve_request_at(job):
+	# Resolve one physical source-target transaction without shared state.
+	source_x, source_y = job["source"]
+	target_x, target_y = job["target"]
 	movement.move_to(source_x, source_y)
 
-	if get_entity_type() != request["source_entity"]:
-		polyculture_field.set_crop(field, source_x, source_y, None)
-		polyculture_field.complete_request(field, target_x, target_y)
-		return
+	if get_entity_type() != job["source_entity"]:
+		return _request_result(job, REQUEST_SOURCE_MISSING)
 
 	if not can_harvest() and not crop_care.care_until_mature():
-		polyculture_field.wait_request(field, target_x, target_y)
-		return None
+		return _request_result(job, REQUEST_WAITING)
 
 	movement.move_to(target_x, target_y)
+	target_cleared = _clear_current()
 
-	if not _clear_target(field, target_x, target_y):
-		return _expire_or_defer(field, target_x, target_y, request)
+	if not target_cleared:
+		return _request_result(job, REQUEST_BLOCKED)
 
-	if not plant_current(field, request["entity"]):
-		return _expire_or_defer(field, target_x, target_y, request)
+	if not planter.plant_entity(job["entity"]):
+		result = _request_result(job, REQUEST_BLOCKED)
+		result["target_cleared"] = True
+		return result
 
-	polyculture_field.complete_request(field, target_x, target_y)
-	return _harvest_source(field, request)
+	companion = get_companion()
+	movement.move_to(source_x, source_y)
+	source_harvested = False
+
+	if get_entity_type() == job["source_entity"] and can_harvest():
+		source_harvested = harvest()
+
+	result = _request_result(job, REQUEST_COMPLETED)
+	result["companion"] = companion
+	result["entity"] = job["entity"]
+	result["source_harvested"] = source_harvested
+	result["target_cleared"] = True
+	return result
 
 
-def _clear_target(field, x, y):
+def _request_result(job, status):
+	return {
+		"companion": None,
+		"entity": None,
+		"source": job["source"],
+		"source_harvested": False,
+		"status": status,
+		"target": job["target"],
+		"target_cleared": False,
+	}
+
+
+def _clear_current():
 	entity = get_entity_type()
 
 	if entity == None or entity == Entities.Dead_Pumpkin:
-		polyculture_field.set_crop(field, x, y, None)
 		return True
 
 	if not can_harvest() and not crop_care.care_until_mature():
 		return False
 
-	if not harvest():
-		return False
-
-	polyculture_field.set_crop(field, x, y, None)
-	return True
-
-
-def _expire_or_defer(field, target_x, target_y, request):
-	expired = polyculture_field.defer_request(field, target_x, target_y)
-
-	if expired != None:
-		return _harvest_source(field, request)
-
-	return None
-
-
-def _harvest_source(field, request):
-	source_x, source_y = request["source"]
-	movement.move_to(source_x, source_y)
-
-	if get_entity_type() != request["source_entity"]:
-		polyculture_field.set_crop(field, source_x, source_y, None)
-		return
-
-	if can_harvest() and harvest():
-		polyculture_field.set_crop(field, source_x, source_y, None)
-		return source_x, source_y
-
-	return None
+	return harvest()
 
 
 # endregion

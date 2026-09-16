@@ -4,10 +4,12 @@
 
 from __builtins__ import *
 
+import movement
+
 # region Job control
 
 
-def run_jobs(worker, jobs):
+def run_jobs(worker, jobs, starts=None):
 	# Run copied jobs across available drones and preserve result order.
 	results = []
 
@@ -27,7 +29,12 @@ def run_jobs(worker, jobs):
 			if next_job >= len(jobs):
 				break
 
-			drone = spawn_drone(worker, jobs[next_job])
+			start = None
+
+			if starts != None:
+				start = starts[next_job]
+
+			drone = spawn_at(worker, jobs[next_job], start)
 
 			if drone == None:
 				break
@@ -36,6 +43,7 @@ def run_jobs(worker, jobs):
 			next_job += 1
 
 		if next_job < len(jobs):
+			_move_to_start(starts, next_job)
 			results[next_job] = worker(jobs[next_job])
 			next_job += 1
 
@@ -43,6 +51,23 @@ def run_jobs(worker, jobs):
 			results[index] = wait_for(drone)
 
 	return results
+
+
+def spawn_at(worker, job, start=None):
+	# Spawn one copied job after positioning the controller if requested.
+	if start != None:
+		x, y = start
+		movement.move_to(x, y)
+
+	return spawn_drone(worker, job)
+
+
+def _move_to_start(starts, index):
+	if starts == None:
+		return
+
+	x, y = starts[index]
+	movement.move_to(x, y)
 
 
 # endregion

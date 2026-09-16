@@ -16,7 +16,13 @@ def scan_world():
 	size = get_world_size()
 	state = _new_state(size)
 	pending = []
-	results = drone_control.run_jobs(_scan_column, range(size))
+	jobs = range(size)
+	starts = []
+
+	for x in jobs:
+		starts.append((x, 0))
+
+	results = drone_control.run_jobs(_scan_column, jobs, starts)
 
 	for x, column, column_pending in results:
 		for y in range(size):
@@ -49,7 +55,12 @@ def revisit_pending(state, pending):
 	# Revisit unresolved coordinates and return those still unresolved.
 	next_pending = []
 	jobs = _group_by_column(pending)
-	results = drone_control.run_jobs(_revisit_coordinates, jobs)
+	starts = []
+
+	for coordinates in jobs:
+		starts.append(coordinates[0])
+
+	results = drone_control.run_jobs(_revisit_coordinates, jobs, starts)
 
 	for resolved, unresolved in results:
 		for x, y in resolved:
@@ -103,14 +114,20 @@ def _group_by_column(coordinates):
 def sort_world():
 	# Sort rows eastward, then columns northward.
 	size = get_world_size()
+	row_starts = []
+	column_starts = []
+
+	for index in range(size):
+		row_starts.append((0, index))
+		column_starts.append((index, 0))
 
 	if not _all_succeeded(
-		drone_control.run_jobs(_sort_row, range(size))
+		drone_control.run_jobs(_sort_row, range(size), row_starts)
 	):
 		return False
 
 	return _all_succeeded(
-		drone_control.run_jobs(_sort_column, range(size))
+		drone_control.run_jobs(_sort_column, range(size), column_starts)
 	)
 
 

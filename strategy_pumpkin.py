@@ -22,6 +22,7 @@ def grow_world(state):
 		strategy_polyculture.grow_world(state["polyculture"])
 		return
 
+	strategy_polyculture.finish(state["polyculture"])
 	pumpkin_state, pending = pumpkin_field.scan_world()
 
 	if len(pending) == 0:
@@ -36,6 +37,11 @@ def grow_world(state):
 		if len(pending) == 0:
 			harvest()
 			return
+
+
+def finish(state):
+	# Drain any carrot-supply drones owned by this strategy.
+	return strategy_polyculture.finish(state["polyculture"])
 
 
 # endregion

@@ -10,10 +10,10 @@ FARM_TARGET = {
 	Items.Hay: 2000000,
 	Items.Wood: 2000000,
 	Items.Carrot: 1000000,
-	Items.Pumpkin: 1000000,
+	Items.Pumpkin: 50000,
 	Items.Weird_Substance: 10000,
-	Items.Power: 500,
-	Items.Cactus: 1000,
+	Items.Power: 100000,
+	Items.Cactus: 1000000,
 	Items.Gold: 100000,
 }
 

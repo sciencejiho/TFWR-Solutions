@@ -4,7 +4,6 @@
 
 from __builtins__ import *
 
-import crop_care
 import drone_control
 import inventory
 import movement
@@ -19,10 +18,6 @@ CROP_BY_ITEM = {
 	Items.Carrot: Entities.Carrot,
 	Items.Power: Entities.Sunflower,
 }
-
-CROP_MISSING = 0
-CROP_KEPT = 1
-CROP_HARVESTED = 2
 
 
 def _select_primary():
@@ -42,135 +37,289 @@ def _select_primary():
 # endregion
 
 
-# region Farming strategy
+# region Strategy lifecycle
 
 
 def new_state():
-	# Create explicitly owned persistent state for this strategy.
-	size = get_world_size()
-	return {"field": polyculture_field.new_field(size, size)}
+	# Create asynchronous lane state owned by this strategy.
+	state = {}
+	_reset_state(state, get_world_size())
+	return state
 
 
 def grow_world(state):
-	# Advance one bounded pass of a persistent compact polyculture field.
+	# Advance child lanes and one controller lane without a global barrier.
 	size = get_world_size()
-	limit = _crop_limit(size)
-	field = state["field"]
+	lane_count = min(max_drones(), size)
 
-	if field["size"] != size:
-		field = polyculture_field.new_field(size, size)
-		state["field"] = field
+	if state["size"] != size or state["lane_count"] != lane_count:
+		finish(state)
+		_reset_state(state, size)
 
-	_process_crops(field, limit)
-	_process_requests(field, limit)
-	_seed_field(field, limit)
-
-
-def _crop_limit(size):
-	limit = size * 2
-	area = size * size
-
-	if limit > area:
-		return area
-
-	return limit
+	_collect_finished(state)
+	_process_requests(state)
+	_launch_workers(state)
+	_run_controller_lane(state)
 
 
-def _process_crops(field, limit):
-	coordinates = polyculture_field.begin_crop_pass(field)
-	jobs = []
+def finish(state):
+	# Drain active children without launching another column.
+	for worker in state["workers"]:
+		if worker["handle"] == None:
+			continue
 
-	for x, y in coordinates:
+		results = wait_for(worker["handle"])
+		_merge_column_results(state["field"], results)
+		_complete_worker(state, worker)
+
+	return True
+
+
+def _reset_state(state, size):
+	lane_count = min(max_drones(), size)
+	workers = []
+
+	for lane in range(lane_count - 1):
+		workers.append(
+			{
+				"handle": None,
+				"lane": lane,
+				"next_x": lane,
+				"x": None,
+			}
+		)
+
+	state["controller_lane"] = lane_count - 1
+	state["controller_x"] = lane_count - 1
+	state["field"] = polyculture_field.new_field(size, size)
+	state["lane_count"] = lane_count
+	state["size"] = size
+	state["workers"] = workers
+
+
+# endregion
+
+
+# region Asynchronous lanes
+
+
+def _collect_finished(state):
+	for worker in state["workers"]:
+		handle = worker["handle"]
+
+		if handle == None or not has_finished(handle):
+			continue
+
+		results = wait_for(handle)
+		_merge_column_results(state["field"], results)
+		_complete_worker(state, worker)
+
+
+def _complete_worker(state, worker):
+	worker["next_x"] = _next_x(
+		worker["x"],
+		worker["lane"],
+		state["lane_count"],
+		state["size"],
+	)
+	worker["handle"] = None
+	worker["x"] = None
+
+
+def _launch_workers(state):
+	for worker in state["workers"]:
+		if worker["handle"] != None:
+			continue
+
+		x = worker["next_x"]
+		job = _column_job(state["field"], x, state["size"])
+		handle = drone_control.spawn_at(
+			_maintain_column,
+			job,
+			(x, 0),
+		)
+
+		if handle != None:
+			worker["handle"] = handle
+			worker["x"] = x
+
+
+def _run_controller_lane(state):
+	x = state["controller_x"]
+	job = _column_job(state["field"], x, state["size"])
+	movement.move_to(x, 0)
+	results = _maintain_column(job)
+	_merge_column_results(state["field"], results)
+	state["controller_x"] = _next_x(
+		x,
+		state["controller_lane"],
+		state["lane_count"],
+		state["size"],
+	)
+
+
+def _next_x(x, lane, lane_count, size):
+	next_x = x + lane_count
+
+	if next_x >= size:
+		return lane
+
+	return next_x
+
+
+# endregion
+
+
+# region Column work
+
+
+def _column_job(field, x, size):
+	primary = _select_primary()
+	job = []
+
+	for y in range(size):
 		expected = polyculture_field.get_crop(field, x, y)
 		waiting = polyculture_field.has_request(field, x, y)
-		jobs.append((x, y, expected, waiting))
+		job.append((x, y, expected, waiting, primary))
 
-	results = drone_control.run_jobs(_process_crop, jobs)
-
-	for x, y, expected, result in results:
-		if result == CROP_MISSING:
-			polyculture_field.set_crop(field, x, y, None)
-		elif result == CROP_HARVESTED:
-			polyculture_field.set_crop(field, x, y, None)
-			movement.move_to(x, y)
-			_plant_if_below_limit(field, limit)
-		else:
-			polyculture_field.set_crop(field, x, y, expected)
+	return job
 
 
-def _process_crop(job):
-	x, y, expected, waiting = job
-	movement.move_to(x, y)
+def _maintain_column(job):
+	results = []
 
-	if get_entity_type() != expected:
-		return x, y, expected, CROP_MISSING
+	for tile_job in job:
+		results.append(polyculture_tile.maintain_at(tile_job))
 
-	if waiting:
-		return x, y, expected, CROP_KEPT
-
-	if not can_harvest() and not crop_care.care_until_mature():
-		return x, y, expected, CROP_KEPT
-
-	if can_harvest() and harvest():
-		return x, y, expected, CROP_HARVESTED
-
-	return x, y, expected, CROP_KEPT
+	return results
 
 
-def _process_requests(field, limit):
+def _merge_column_results(field, results):
+	for result in results:
+		if result == None:
+			continue
+
+		x, y, entity, companion = result
+		polyculture_field.set_crop(field, x, y, entity)
+		_record_companion(field, x, y, companion)
+
+
+# endregion
+
+
+# region Companion requests
+
+
+def _process_requests(state):
+	field = state["field"]
 	targets = polyculture_field.begin_request_pass(field)
+	active_columns = _active_columns(state)
+	processed = 0
 
-	for x, y in targets:
-		opened = polyculture_tile.resolve_request(field, x, y)
+	for target_x, target_y in targets:
+		request = polyculture_field.peek_request(
+			field,
+			target_x,
+			target_y,
+		)
 
-		if opened != None:
-			movement.move_to(opened[0], opened[1])
-			_plant_if_below_limit(field, limit)
+		if request == None:
+			continue
+
+		source_x, source_y = request["source"]
+
+		if processed >= state["size"]:
+			polyculture_field.wait_request(field, target_x, target_y)
+			continue
+
+		if source_x in active_columns or target_x in active_columns:
+			polyculture_field.wait_request(field, target_x, target_y)
+			continue
+
+		if polyculture_field.has_request(field, target_x, target_y):
+			polyculture_field.wait_request(field, target_x, target_y)
+			continue
+
+		job = {
+			"entity": request["entity"],
+			"source": (source_x, source_y),
+			"source_entity": request["source_entity"],
+			"target": (target_x, target_y),
+		}
+		result = polyculture_tile.resolve_request_at(job)
+		processed += 1
+
+		if result == None:
+			polyculture_field.wait_request(field, target_x, target_y)
+			continue
+
+		_merge_request_result(field, result)
 
 
-def _seed_field(field, limit):
-	for _ in range(limit):
-		if polyculture_field.crop_count(field) >= limit:
-			return
+def _active_columns(state):
+	columns = set()
 
-		_seed_current(field)
-		move(North)
+	for worker in state["workers"]:
+		if worker["handle"] != None:
+			columns.add(worker["x"])
 
-		if get_pos_y() == 0:
-			move(East)
+	return columns
 
 
-def _seed_current(field):
-	x = get_pos_x()
-	y = get_pos_y()
+def _merge_request_result(field, result):
+	source_x, source_y = result["source"]
+	target_x, target_y = result["target"]
+	status = result["status"]
 
-	if polyculture_field.get_crop(field, x, y) != None:
+	if result["target_cleared"]:
+		polyculture_field.set_crop(field, target_x, target_y, None)
+
+	if status == polyculture_tile.REQUEST_SOURCE_MISSING:
+		polyculture_field.set_crop(field, source_x, source_y, None)
+		polyculture_field.complete_request(field, target_x, target_y)
 		return
 
-	entity = get_entity_type()
-
-	if entity != None and (not can_harvest() or not harvest()):
+	if status == polyculture_tile.REQUEST_WAITING:
+		polyculture_field.wait_request(field, target_x, target_y)
 		return
 
-	polyculture_field.set_crop(field, x, y, None)
-	_plant_primary(field)
+	if status == polyculture_tile.REQUEST_BLOCKED:
+		polyculture_field.defer_request(field, target_x, target_y)
+		return
+
+	polyculture_field.complete_request(field, target_x, target_y)
+
+	if result["source_harvested"]:
+		polyculture_field.set_crop(field, source_x, source_y, None)
+
+	polyculture_field.set_crop(
+		field,
+		target_x,
+		target_y,
+		result["entity"],
+	)
+	_record_companion(
+		field,
+		target_x,
+		target_y,
+		result["companion"],
+	)
 
 
-def _plant_if_below_limit(field, limit):
-	if polyculture_field.crop_count(field) < limit:
-		_plant_primary(field)
+def _record_companion(field, x, y, companion):
+	if companion == None:
+		return
 
-
-def _plant_primary(field):
-	entity = _select_primary()
-
-	if polyculture_tile.plant_current(field, entity):
-		return True
-
-	if entity != Entities.Grass:
-		return polyculture_tile.plant_current(field, Entities.Grass)
-
-	return False
+	companion_entity, target = companion
+	target_x, target_y = target
+	polyculture_field.add_request(
+		field,
+		x,
+		y,
+		target_x,
+		target_y,
+		companion_entity,
+	)
 
 
 # endregion
