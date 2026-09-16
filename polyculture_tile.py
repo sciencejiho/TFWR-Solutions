@@ -21,7 +21,7 @@ def maintain_at(job):
 		if waiting:
 			return x, y, expected, None
 
-		if not can_harvest() and not crop_care.care_until_mature():
+		if not can_harvest() and not crop_care.care_on_revisit():
 			return x, y, expected, None
 
 		if not harvest():
@@ -42,7 +42,7 @@ def plant_at(job):
 	current = get_entity_type()
 
 	if current != None and current != Entities.Dead_Pumpkin:
-		if not can_harvest() and not crop_care.care_until_mature():
+		if not can_harvest() and not crop_care.care_on_revisit():
 			return None
 
 		if not harvest():
@@ -54,7 +54,7 @@ def plant_at(job):
 		return None
 
 	planted_entity, companion = planted
-	crop_care.water_if_needed()
+	crop_care.care_after_planting()
 	return x, y, planted_entity, companion
 
 
@@ -91,7 +91,7 @@ def resolve_request_at(job):
 	if get_entity_type() != job["source_entity"]:
 		return _request_result(job, REQUEST_SOURCE_MISSING)
 
-	if not can_harvest() and not crop_care.care_until_mature():
+	if not can_harvest() and not crop_care.care_on_revisit():
 		return _request_result(job, REQUEST_WAITING)
 
 	movement.move_to(target_x, target_y)
@@ -105,6 +105,7 @@ def resolve_request_at(job):
 		result["target_cleared"] = True
 		return result
 
+	crop_care.care_after_planting()
 	companion = get_companion()
 	movement.move_to(source_x, source_y)
 	source_harvested = False
@@ -138,7 +139,7 @@ def _clear_current():
 	if entity == None or entity == Entities.Dead_Pumpkin:
 		return True
 
-	if not can_harvest() and not crop_care.care_until_mature():
+	if not can_harvest() and not crop_care.care_on_revisit():
 		return False
 
 	return harvest()

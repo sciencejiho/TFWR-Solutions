@@ -25,35 +25,43 @@ def water_if_needed():
 
 # region Fertilizer
 
-MAX_FERTILIZER_USES = 3
+SLOW_GROWERS = {
+	Entities.Bush,
+	Entities.Carrot,
+	Entities.Sunflower,
+	Entities.Tree,
+}
 
 
-def fertilize_until_mature():
-	# Spend bounded fertilizer surplus until the current crop is mature.
-	if can_harvest():
-		return True
+def fertilize_if_useful(for_substance=False):
+	# Use one dose only for a slow crop or needed Weird Substance.
+	if can_harvest() or not _has_drone_margin(Items.Fertilizer):
+		return False
 
-	for _ in range(MAX_FERTILIZER_USES):
-		if not _has_drone_margin(Items.Fertilizer):
-			return False
+	if not for_substance and get_entity_type() not in SLOW_GROWERS:
+		return False
 
-		if not use_item(Items.Fertilizer):
-			return False
-
-		if can_harvest():
-			return True
-
-	return False
+	return use_item(Items.Fertilizer)
 
 
 # endregion
 
 
-# region Combined care
+# region Care policies
 
 
-def care_until_mature():
-	# Apply available growth aids and report whether the crop is mature.
+def care_after_planting():
+	# Water new plants and infect them only while substance is needed.
+	water_if_needed()
+
+	if inventory.below_target(Items.Weird_Substance):
+		fertilize_if_useful(True)
+
+	return can_harvest()
+
+
+def care_on_revisit():
+	# Help a slow plant only after a traversal found it still growing.
 	if can_harvest():
 		return True
 
@@ -62,7 +70,8 @@ def care_until_mature():
 	if can_harvest():
 		return True
 
-	return fertilize_until_mature()
+	fertilize_if_useful()
+	return can_harvest()
 
 
 # endregion

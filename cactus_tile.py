@@ -15,17 +15,16 @@ def resolve_current():
 	entity = get_entity_type()
 
 	if entity == Entities.Cactus:
-		return crop_care.care_until_mature()
+		return crop_care.care_on_revisit()
 
 	if entity == Entities.Dead_Pumpkin:
 		if not planter.plant_entity(Entities.Cactus):
 			return False
 
-		crop_care.water_if_needed()
-		return False
+		return crop_care.care_after_planting()
 
 	if entity != None:
-		if not can_harvest() and not crop_care.care_until_mature():
+		if not can_harvest() and not crop_care.care_on_revisit():
 			return False
 
 		if not harvest():
@@ -34,8 +33,7 @@ def resolve_current():
 	if not planter.plant_entity(Entities.Cactus):
 		return False
 
-	crop_care.water_if_needed()
-	return False
+	return crop_care.care_after_planting()
 
 
 # endregion

@@ -7,14 +7,14 @@ from __builtins__ import *
 # region Farm targets
 
 FARM_TARGET = {
-	Items.Hay: 2000000,
-	Items.Wood: 2000000,
-	Items.Carrot: 1000000,
-	Items.Pumpkin: 50000,
-	Items.Weird_Substance: 10000,
-	Items.Power: 100000,
+	Items.Hay: 10000000,
+	Items.Wood: 10000000,
+	Items.Carrot: 10000000,
+	Items.Pumpkin: 500000,
+	Items.Weird_Substance: 25000,
+	Items.Power: 25000,
 	Items.Cactus: 1000000,
-	Items.Gold: 100000,
+	Items.Gold: 1000000,
 }
 
 # endregion
@@ -23,8 +23,8 @@ FARM_TARGET = {
 # region Passive targets
 
 PASSIVE_TARGET = {
-	Items.Water: 5000,
-	Items.Fertilizer: 500,
+	Items.Water: 50000,
+	Items.Fertilizer: 5000,
 }
 
 REFILL_RATIO = 0.8

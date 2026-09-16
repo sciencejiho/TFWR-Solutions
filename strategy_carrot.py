@@ -4,6 +4,7 @@
 
 from __builtins__ import *
 
+import crop_care
 import drone_control
 import movement
 import planter
@@ -43,10 +44,7 @@ def _farm_current_tile():
 		harvest()
 
 	planter.plant_carrot()
-
-	if get_water() < 0.1 and num_items(Items.Water) > 0:
-		use_item(Items.Water)
-		use_item(Items.Water)
+	crop_care.care_after_planting()
 
 
 # endregion

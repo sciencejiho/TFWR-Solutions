@@ -16,22 +16,19 @@ def resolve_current():
 
 	if entity == Entities.Dead_Pumpkin:
 		planter.plant_pumpkin()
-		crop_care.water_if_needed()
-		return False
+		return crop_care.care_after_planting()
 
 	if entity != Entities.Pumpkin:
 		if can_harvest():
 			harvest()
 
 		planter.plant_pumpkin()
-		crop_care.water_if_needed()
-		return False
+		return crop_care.care_after_planting()
 
 	if can_harvest():
 		return True
 
-	crop_care.water_if_needed()
-	return False
+	return crop_care.care_on_revisit()
 
 
 # endregion
