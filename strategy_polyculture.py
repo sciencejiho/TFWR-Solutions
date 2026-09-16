@@ -20,7 +20,7 @@ CROP_BY_ITEM = {
 }
 
 
-def _select_primary():
+def _select_primary(x, y):
 	selected_item = None
 	selected_ratio = None
 
@@ -31,7 +31,12 @@ def _select_primary():
 			selected_item = item
 			selected_ratio = ratio
 
-	return CROP_BY_ITEM[selected_item]
+	entity = CROP_BY_ITEM[selected_item]
+
+	if entity == Entities.Tree and (x + y) % 2 != 0:
+		return Entities.Bush
+
+	return entity
 
 
 # endregion
@@ -174,12 +179,12 @@ def _next_x(x, lane, lane_count, size):
 
 
 def _column_job(field, x, size):
-	primary = _select_primary()
 	job = []
 
 	for y in range(size):
 		expected = polyculture_field.get_crop(field, x, y)
 		waiting = polyculture_field.has_request(field, x, y)
+		primary = _select_primary(x, y)
 		job.append((x, y, expected, waiting, primary))
 
 	return job
