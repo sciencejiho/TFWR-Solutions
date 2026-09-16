@@ -91,7 +91,7 @@ def _reset_state(state, size):
 
 	state["controller_lane"] = lane_count - 1
 	state["controller_x"] = lane_count - 1
-	state["field"] = polyculture_field.new_field(size, size)
+	state["field"] = polyculture_field.new_field(size, lane_count)
 	state["lane_count"] = lane_count
 	state["size"] = size
 	state["workers"] = workers
@@ -237,7 +237,7 @@ def _process_requests(state):
 			continue
 
 		if polyculture_field.has_request(field, target_x, target_y):
-			polyculture_field.wait_request(field, target_x, target_y)
+			polyculture_field.defer_request(field, target_x, target_y)
 			continue
 
 		job = {

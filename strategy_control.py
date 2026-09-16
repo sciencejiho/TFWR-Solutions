@@ -75,12 +75,6 @@ def _select_mode(active):
 		if urgent != None:
 			return urgent
 
-		if inventory.below_target(Items.Gold):
-			return MAZE
-
-	elif active != None and _mode_below_target(active):
-		return active
-
 	mode = _lowest_mode(False, None)
 
 	if mode == MAZE and not strategy_maze.can_start():
@@ -109,14 +103,6 @@ def _lowest_mode(refill_only, excluded):
 			selected_ratio = ratio
 
 	return selected_mode
-
-
-def _mode_below_target(mode):
-	for item in inventory.FARM_TARGET:
-		if MODE_BY_ITEM[item] == mode and inventory.below_target(item):
-			return True
-
-	return False
 
 
 def _has_work():
